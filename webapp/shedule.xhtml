@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+<f:view>
+    <h:head>
+        <title>Начальная страница</title>
+        <h:outputStylesheet name="css/style.css"/>
+        <!--<h:outputScript name="js/jquery-3.5.1.min.js"/>-->
+        <h:outputScript name="js/clock.js"/>
+    </h:head>
+    <h:body>
+        <div id="header">
+            <h:link value="Главная " outcome="/index.xhtml"/>
+            <h:link value="Расписание занятий" outcome="/shedule.xhtml"/>
+        </div>
+        <div id="content">
+            <h:form id="form">
+                <p:growl id="msgs" showDetail="true" skipDetailIfEqualsSummary="true" />
+                <h:panelGrid columns="7" cellpadding="5">
+                    <p:calendar id="mask" value="#{lessonSheduleBean.selectedDate}" mode="popup" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy" mask="true"/>
+                    <p:commandButton value="Выбрать" update="msgs" action="#{lessonSheduleBean.click}"/>
+                    <p:commandButton value="Заменить препод." type="button" onclick="PF('changeTeacher').show();PF('addLesson').hide()"/>
+                    <p:commandButton value="Добавить занятие" type="button" onclick="PF('addLesson').show();PF('changeTeacher').hide()"/>
+                    <p:commandButton value="Найти свободную ауд." type="button" onclick="PF('searchAud').show();PF('changeTeacher').hide()"/>
+                    <p:commandButton value="Найти свободного препод." type="button" onclick="PF('searchTeacher').show();PF('searchAud').hide()"/>
+                </h:panelGrid>
+                <p:dialog header="Замена преподавателя" widgetVar="changeTeacher" showEffect="fold">
+                    <h:panelGrid id="teacherDisplay" columns="4">
+                        <p:outputLabel for="@next" value="Группа:" />
+                        <p:selectOneMenu id="group" value="#{lessonSheduleBean.selectedGroup}" effect="fold">
+                            <f:selectItem itemLabel="Select One" itemValue="#{null}"/>
+                            <f:selectItems value="#{lessonSheduleBean.getGroups()}" var="group_id" itemLabel="#{group_id.name};#{group_id.teacherName}" itemValue="#{group_id.name}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="@next" value="Новый преподаватель:" />
+                        <p:selectOneMenu id="newTeacher" value="#{lessonSheduleBean.selectedTeacherId}" effect="fold">
+                            <f:selectItem itemLabel="Select One" itemValue="#{null}"/>
+                            <f:selectItems value="#{lessonSheduleBean.getTeachers()}" var="teacher" itemLabel="#{teacher.fio}" itemValue="#{teacher.id}"/>
+                        </p:selectOneMenu>
+                        <p:commandButton value="Заменить" action="#{lessonSheduleBean.changeTeacher}" update="singleDT teacherDisplay msgs"/>
+                    </h:panelGrid>
+                </p:dialog>
+                <p:dialog header="Новое занятие" widgetVar="addLesson" showEffect="fold">
+                    <h:panelGrid id="lessonDisplay" columns="4">
+                        <p:outputLabel for="@next" value="Группа:" />
+                        <p:selectOneMenu id="groupName" value="#{lessonSheduleBean.selectedNewGroup}" effect="fold">
+                            <f:selectItem itemLabel="Select One" itemValue="#{null}"/>
+                            <f:selectItems value="#{lessonSheduleBean.getGroups()}" var="group_id" itemLabel="#{group_id.name};#{group_id.teacherName}" itemValue="#{group_id.id}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="@next" value="Преподаватель:" />
+                        <p:selectOneMenu id="teacher" value="#{lessonSheduleBean.selectedNewTeacherId}" effect="fold">
+                            <f:selectItem itemLabel="Select One" itemValue="#{null}"/>
+                            <f:selectItems value="#{lessonSheduleBean.getTeachers()}" var="teacher" itemLabel="#{teacher.fio}" itemValue="#{teacher.id}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="@next" value="Аудитория:" />
+                        <p:selectOneMenu id="auditory" value="#{lessonSheduleBean.selectedNewAudId}" effect="fold">
+                            <f:selectItem itemLabel="Select One" itemValue="#{null}"/>
+                            <f:selectItems value="#{lessonSheduleBean.getAuditories()}" var="aud" itemLabel="#{aud}" itemValue="#{aud}"/>
+                        </p:selectOneMenu>
+                        <p:outputLabel for="datetimeStart" value="Время начала:" />
+                        <p:calendar id="datetimeStart" value="#{lessonSheduleBean.newTimeStart}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:outputLabel for="datetimeFinish" value="Время конца:" />
+                        <p:calendar id="datetimeFinish" value="#{lessonSheduleBean.newTimeFinish}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:commandButton value="Создать" action="#{lessonSheduleBean.addNewLesson}" update="singleDT lessonDisplay msgs"/>
+                    </h:panelGrid>
+                </p:dialog>
+                <p:dialog header="Поиск аудитории" widgetVar="searchAud" showEffect="fold" onHide="#{lessonSheduleBean.hideAud()}">
+                    <h:panelGrid id="audDisplay" columns="4" cellpadding="5">
+                        <p:outputLabel for="@next" value="Время начала:" />
+                        <p:calendar id="audTimeStart" value="#{lessonSheduleBean.audTimeStart}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:outputLabel for="@next" value="Время конца:" />
+                        <p:calendar id="audTimeFinish" value="#{lessonSheduleBean.audTimeFinish}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:commandButton value="Найти" action="#{lessonSheduleBean.searchFreeAud}" update="msgs freeAud"/>
+                        <p:outputLabel for="@next" value="Свободная аудитория"/>
+                        <h:outputText id="freeAud" value="#{lessonSheduleBean.freeAud}"/>
+                    </h:panelGrid>
+                </p:dialog>
+                <p:dialog header="Поиск преподавателя" widgetVar="searchTeacher" showEffect="fold" onHide="#{lessonSheduleBean.hideTeacher()}">
+                    <h:panelGrid id="searchTeacherDisplay" columns="4" cellpadding="5">
+                        <p:outputLabel for="@next" value="Время начала:" />
+                        <p:calendar id="teacherTimeStart" value="#{lessonSheduleBean.teacherTimeStart}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:outputLabel for="@next" value="Время конца:" />
+                        <p:calendar id="teacherTimeFinish" value="#{lessonSheduleBean.teacherTimeFinish}" mindate="01.09.2020" maxdate="27.12.2020" pattern="dd.MM.yyyy HH:mm:ss" mask="true"/>
+                        <p:commandButton value="Найти" action="#{lessonSheduleBean.searchFreeTeacher}" update="msgs freeTeacher"/>
+                        <p:outputLabel for="@next" value="Свободный преподаватель"/>
+                        <h:outputText id="freeTeacher" value="#{lessonSheduleBean.freeTeacher}"/>
+                    </h:panelGrid>
+                </p:dialog>
+                <p:dialog modal="true" resizable="false" header="Values" widgetVar="dlg" showEffect="fold">
+                    <p:panelGrid id="display" columns="2" columnClasses="label,value">
+                        <h:outputText value="Дата:" />
+                        <h:outputText value="#{lessonSheduleBean.selectedDate}">
+                            <f:convertDateTime pattern="MM/dd/yyyy" />
+                        </h:outputText>
+                    </p:panelGrid>
+                </p:dialog>
+                <p:dataTable id="singleDT" var="lesson" value="#{lessonSheduleBean.getLessons()}" selectionMode="single" selection="#{lessonSheduleBean.selectedLesson}" rowKey="#{lesson.id}"
+                             scrollable="true" scrollHeight="300">
+                    <p:column headerText="Группа">
+                        <h:outputText value="#{lesson.getGroupName()}" />
+                    </p:column>
+                    <p:column headerText="Аудитория">
+                        <h:outputText value="#{lesson.aud_id}" />
+                    </p:column>
+                    <p:column headerText="Преподаватель">
+                        <h:outputText value="#{lesson.teacherName}" />
+                    </p:column>
+                    <p:column headerText="Начало">
+                        <h:outputText value="#{lesson.start_time}" />
+                    </p:column>
+                    <p:column headerText="Конец">
+                        <h:outputText value="#{lesson.finish_time}" />
+                    </p:column>
+                </p:dataTable>
+                <p:contextMenu for="singleDT">
+                    <p:menuitem value="Сгенерировать занятия" update="singleDT msgs" action="#{lessonSheduleBean.generate}"/>
+                    <p:menuitem value="Показать уровень группы" update="msgs" action="#{lessonSheduleBean.getGroupLevel}"/>
+                </p:contextMenu>
+            </h:form>
+        </div>
+    </h:body>
+</f:view>
+</html>
